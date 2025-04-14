@@ -21,14 +21,18 @@ function VideoUploader() {
   const thumbnailInputRef = useRef(null);
   
   // Channel credentials - these should come from environment variables in production
-  const CHANNEL_ID = process.env.VIDEONEST_CHANNEL_ID 
-  const API_KEY = process.env.VIDEONEST_API_KEY 
+  const CHANNEL_ID = process.env.REACT_APP_VIDEONEST_CHANNEL_ID 
+  // Make sure these are an int and string, respectively
+  const CHANNEL_ID_INT = parseInt(CHANNEL_ID, 10);
+  const API_KEY = process.env.REACT_APP_VIDEONEST_API_KEY;
+
+
   
   const handleAuth = async () => {
     try {
       setAuthStatus({ authenticated: false, message: 'Authenticating...' });
       
-      const authResult = await authVideonest(CHANNEL_ID, API_KEY);
+      const authResult = await authVideonest(CHANNEL_ID_INT, API_KEY);
       
       if (authResult.success) {
         setAuthStatus({ 
