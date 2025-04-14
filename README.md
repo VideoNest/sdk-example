@@ -1,53 +1,72 @@
-# Getting Started with Create React App
+# VideoNest SDK Test Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a test application for the VideoNest SDK. It demonstrates how to use the VideoNest SDK to authenticate, upload videos, check processing status, display video embeds, and list videos from a VideoNest channel.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Authentication with VideoNest API
+- Video upload with thumbnail generation
+- Processing status tracking
+- Video embed display (only when processing is complete)
+- Listing all videos in a channel
 
-### `npm start`
+## Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js (v14.0.0 or higher)
+- npm (v6.0.0 or higher)
+- A VideoNest channel account with API key
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. Clone this repository
+   ```bash
+   git clone https://github.com/your-username/videonest-test-app.git
+   cd videonest-test-app
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Install dependencies
+   ```bash
+   npm install
+   ```
 
-### `npm run build`
+3. Set up environment variables
+   
+   Create a `.env` file in the root of the project with the following content, replacing with your actual credentials:
+   ```
+   REACT_APP_CHANNEL_ID=your_channel_id
+   REACT_APP_API_KEY=your_api_key
+   ```
+   
+   The test credentials are provided as fallbacks in the code, but using environment variables is recommended for security.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Running the Application
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Start the development server:
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The application will be available at [http://localhost:3002](http://localhost:3002).
 
-### `npm run eject`
+## Usage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. **Authentication**: Click the "Authenticate" button to connect to your VideoNest channel
+2. **Upload Video**: Select a video file, add metadata, and upload
+3. **Track Processing**: The app will show the processing status of the uploaded video
+4. **View Embed**: Once processing is complete, the video embed will appear
+5. **List Videos**: Click the "Fetch Videos" button to see all videos in your channel
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## VideoNest SDK Documentation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+For more information about the VideoNest SDK and its capabilities, please refer to the official VideoNest documentation.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## License
 
-## Learn More
+This project is intended for testing and demonstration purposes only.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Contributors
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- [Your Name] - Initial work
 
 ### Analyzing the Bundle Size
 
