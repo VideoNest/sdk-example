@@ -1,9 +1,10 @@
 // VideoUploader.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { authVideonest, uploadVideo, getVideoStatus, VideonestEmbed, listVideos } from 'videonest-sdk';
+import { authVideonest, uploadVideo, getVideoStatus, VideonestEmbed, listVideos, setDebugMode } from 'videonest-sdk';
 
 
 function VideoUploader() {
+  setDebugMode(true);
   const [authStatus, setAuthStatus] = useState({ authenticated: false, message: '' });
   const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '' });
   const [processingStatus, setProcessingStatus] = useState({ processing: false, status: '', message: '' });
@@ -444,7 +445,7 @@ function VideoUploader() {
         </section>
       )}
       
-      {videoId && processingStatus.status === 'completed' && (
+      {videoId && (processingStatus.status === 'completed') && (
           <section className="embed-section">
             <h2>Step 4: Video Embed</h2>
             <p>Embed this video on your website:</p>
@@ -456,9 +457,9 @@ function VideoUploader() {
                 style={{
                   width: '100%',
                   height: '500px',
-                  primaryColor: '#4CAF50', // Using the same green as your buttons
-                  darkMode: 'false',
-                  hideVideoDetails: 'true'
+                  primaryColor: '#00000', // Using the same green as your buttons
+                  darkMode: false,
+                  hideVideoDetails: false
                 }}
               />
             </div>
