@@ -1,57 +1,32 @@
 // VideoUploader.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { authVideonest, uploadVideo, getVideoStatus, VideonestEmbed, listVideos, setDebugMode } from 'videonest-sdk';
-
+import { useNavigate } from 'react-router-dom';
+import { uploadVideo, getVideoStatus, VideonestEmbed, setDebugMode } from 'videonest-sdk';
+import './VideoUploader.css';
 
 function VideoUploader() {
   setDebugMode(true);
-  const [authStatus, setAuthStatus] = useState({ authenticated: false, message: '' });
+  const navigate = useNavigate();
+  
+  // Upload state
+  const [currentStep, setCurrentStep] = useState(0);
   const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '' });
   const [processingStatus, setProcessingStatus] = useState({ processing: false, status: '', message: '' });
   const [videoId, setVideoId] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [customThumbnail, setCustomThumbnail] = useState(false);
-  const [videosList, setVideosList] = useState([]);
-  const [videosListStatus, setVideosListStatus] = useState({ loading: false, message: '' });
   
+  // Form references
   const fileInputRef = useRef(null);
   const titleRef = useRef(null);
   const descriptionRef = useRef(null);
   const tagsRef = useRef(null);
   const thumbnailInputRef = useRef(null);
-  
-  // Channel credentials - these should come from environment variables in production
-  const CHANNEL_ID = process.env.REACT_APP_VIDEONEST_CHANNEL_ID 
-  // Make sure these are an int and string, respectively
-  const CHANNEL_ID_INT = parseInt(CHANNEL_ID, 10);
-  const API_KEY = process.env.REACT_APP_VIDEONEST_API_KEY;
 
-
-  
-  const handleAuth = async () => {
-    try {
-      setAuthStatus({ authenticated: false, message: 'Authenticating...' });
-      
-      const authResult = await authVideonest(CHANNEL_ID_INT, API_KEY);
-      
-      if (authResult.success) {
-        setAuthStatus({ 
-          authenticated: true, 
-          message: 'Authentication successful!' 
-        });
-      } else {
-        setAuthStatus({ 
-          authenticated: false, 
-          message: `Authentication failed: ${authResult.message || 'Unknown error'}` 
-        });
-      }
-    } catch (error) {
-      setAuthStatus({ 
-        authenticated: false, 
-        message: `Authentication error: ${error.message}` 
-      });
-    }
+  // Navigation function
+  const navigateToHome = () => {
+    navigate('/');
   };
   
   // Function to generate thumbnail from video at 2 seconds
@@ -164,16 +139,8 @@ function VideoUploader() {
     };
   }, [thumbnailPreview]);
 
+  // Handle video upload
   const handleUpload = async () => {
-    if (!authStatus.authenticated) {
-      setUploadStatus({ 
-        uploading: false, 
-        progress: 0, 
-        message: 'Please authenticate first' 
-      });
-      return;
-    }
-    
     const fileInput = fileInputRef.current;
     if (!fileInput.files || fileInput.files.length === 0) {
       setUploadStatus({ 
@@ -199,48 +166,80 @@ function VideoUploader() {
     const tags = tagsRef.current.value ? tagsRef.current.value.split(',').map(tag => tag.trim()) : [];
     
     try {
-      setUploadStatus({ 
-        uploading: true, 
-        progress: 0, 
-        message: 'Starting upload...' 
-      });
+      setUploadStatus({ uploading: true, progress: 0, message: 'Preparing upload...' });
       
+      // Move to the processing step
+      setCurrentStep(1);
+      
+      // Start the upload process
       const uploadResult = await uploadVideo(videoFile, {
-        metadata: {
-          channelId: CHANNEL_ID,
-          title,
-          description,
-          tags
-        },
+        title,
+        description,
+        tags,
+        thumbnail,
         onProgress: (progress) => {
-          setUploadStatus(prev => ({ 
-            ...prev, 
-            progress, 
-            message: `Uploading: ${progress.toFixed(2)}%` 
-          }));
-        },
-        thumbnail: thumbnail
+          setUploadStatus(prev => ({ ...prev, progress }));
+        }
       });
       
-      if (uploadResult.success && uploadResult.video && uploadResult.video.id) {
-        const newVideoId = uploadResult.video.id;
-        setVideoId(newVideoId);
-        
-        setUploadStatus({ 
-          uploading: false, 
-          progress: 100, 
-          message: `Upload complete! Video ID: ${newVideoId}` 
-        });
-        
-        // Start checking processing status
-        checkVideoStatus(newVideoId);
-      } else {
+      if (!uploadResult.success) {
         setUploadStatus({ 
           uploading: false, 
           progress: 0, 
           message: `Upload failed: ${uploadResult.message || 'Unknown error'}` 
         });
+        return;
       }
+      
+      setVideoId(uploadResult.video_id);
+      setUploadStatus({ 
+        uploading: false, 
+        progress: 100, 
+        message: 'Upload successful! Processing video...' 
+      });
+      
+      // Start polling for video processing status
+      setProcessingStatus({ 
+        processing: true, 
+        status: 'processing', 
+        message: 'Your video is being processed...' 
+      });
+      
+      // Poll for processing status
+      const checkStatus = async () => {
+        try {
+          const statusResult = await getVideoStatus(uploadResult.video_id);
+          
+          if (statusResult.success) {
+            setProcessingStatus({ 
+              processing: statusResult.status !== 'completed', 
+              status: statusResult.status, 
+              message: `Status: ${statusResult.status}` 
+            });
+            
+            if (statusResult.status !== 'completed') {
+              // Keep polling every 5 seconds
+              setTimeout(checkStatus, 5000);
+            }
+          } else {
+            setProcessingStatus({ 
+              processing: false, 
+              status: 'error', 
+              message: `Error checking status: ${statusResult.message || 'Unknown error'}` 
+            });
+          }
+        } catch (error) {
+          setProcessingStatus({ 
+            processing: false, 
+            status: 'error', 
+            message: `Error checking status: ${error.message}` 
+          });
+        }
+      };
+      
+      // Start the polling process
+      checkStatus();
+      
     } catch (error) {
       setUploadStatus({ 
         uploading: false, 
@@ -250,118 +249,17 @@ function VideoUploader() {
     }
   };
   
-  const checkVideoStatus = async (id) => {
-    setProcessingStatus({ 
-      processing: true, 
-      status: 'pending', 
-      message: 'Checking video status...' 
-    });
-    
-    let statusInterval;
-    try {
-      statusInterval = setInterval(async () => {
-        try {
-          const statusResult = await getVideoStatus(id);
-          
-          setProcessingStatus({ 
-            processing: true, 
-            status: statusResult.status, 
-            message: `Processing status: ${statusResult.status}` 
-          });
-          
-          if (statusResult.status === 'completed' || statusResult.status === 'failed') {
-            clearInterval(statusInterval);
-            
-            setProcessingStatus({ 
-              processing: false, 
-              status: statusResult.status, 
-              message: `Final status: ${statusResult.status}` 
-            });
-          }
-        } catch (statusError) {
-          clearInterval(statusInterval);
-          
-          setProcessingStatus({ 
-            processing: false, 
-            status: 'error', 
-            message: `Error checking status: ${statusError.message}` 
-          });
-        }
-      }, 5000);
-    } catch (error) {
-      clearInterval(statusInterval);
-      
-      setProcessingStatus({ 
-        processing: false, 
-        status: 'error', 
-        message: `Error setting up status check: ${error.message}` 
-      });
-    }
-  };
-
-  // Function to fetch the list of videos using the SDK's listVideos function
-  const handleListVideos = async () => {
-    if (!authStatus.authenticated) {
-      setVideosListStatus({
-        loading: false,
-        message: 'Please authenticate first'
-      });
-      return;
-    }
-
-    try {
-      setVideosListStatus({
-        loading: true,
-        message: 'Fetching videos...'
-      });
-
-      // Using the SDK's listVideos function directly
-      const result = await listVideos();
-      
-      if (!result.success) {
-        setVideosListStatus({
-          loading: false,
-          message: result.message || 'Failed to retrieve videos'
-        });
-        return;
-      }
-      
-      setVideosList(result.videos || []);
-      setVideosListStatus({
-        loading: false,
-        message: `Successfully retrieved ${result.videos ? result.videos.length : 0} videos`
-      });
-    } catch (error) {
-      setVideosListStatus({
-        loading: false,
-        message: error instanceof Error ? error.message : 'Failed to retrieve videos'
-      });
-    }
-  };
-  
-  return (
-    <div className="video-uploader">
-      <h1>VideoNest SDK Tester</h1>
-      
-      <section className="auth-section">
-        <h2>Step 1: Authentication</h2>
-        <button onClick={handleAuth} disabled={authStatus.authenticated}>
-          {authStatus.authenticated ? 'Authenticated' : 'Authenticate'}
-        </button>
-        <p className={`status ${authStatus.authenticated ? 'success' : ''}`}>
-          {authStatus.message}
-        </p>
-      </section>
-      
-      <section className="upload-section">
-        <h2>Step 2: Upload Video</h2>
+  const renderUploadForm = () => {
+    return (
+      <div className="upload-form">
+        <h2>Step 1: Upload a Video</h2>
+        
         <div className="form-group">
           <label>Video File:</label>
           <input 
             type="file" 
-            ref={fileInputRef} 
-            accept="video/*" 
-            disabled={!authStatus.authenticated || uploadStatus.uploading}
+            ref={fileInputRef}
+            accept="video/*"
           />
         </div>
         
@@ -370,27 +268,24 @@ function VideoUploader() {
           <input 
             type="text" 
             ref={titleRef} 
-            placeholder="Video title" 
-            disabled={!authStatus.authenticated || uploadStatus.uploading}
+            placeholder="Enter video title"
           />
         </div>
         
         <div className="form-group">
           <label>Description:</label>
           <textarea 
-            ref={descriptionRef} 
-            placeholder="Video description" 
-            disabled={!authStatus.authenticated || uploadStatus.uploading}
+            ref={descriptionRef}
+            placeholder="Enter video description"
           />
         </div>
         
         <div className="form-group">
-          <label>Tags (comma-separated):</label>
+          <label>Tags (comma separated):</label>
           <input 
             type="text" 
-            ref={tagsRef} 
-            placeholder="tag1, tag2, tag3" 
-            disabled={!authStatus.authenticated || uploadStatus.uploading}
+            ref={tagsRef}
+            placeholder="tag1, tag2, tag3"
           />
         </div>
         
@@ -408,239 +303,122 @@ function VideoUploader() {
               ref={thumbnailInputRef} 
               accept="image/jpeg,image/png" 
               onChange={handleThumbnailFileChange}
-              disabled={!authStatus.authenticated || uploadStatus.uploading}
+              disabled={uploadStatus.uploading}
             />
             <p className="thumbnail-help">Upload a custom thumbnail or use the auto-generated one from the 2-second mark</p>
           </div>
         </div>
         
-        <button 
-          onClick={handleUpload} 
-          disabled={!authStatus.authenticated || uploadStatus.uploading}
-        >
-          Upload Video
-        </button>
+        <div className="button-container">
+          <button onClick={navigateToHome} className="secondary-button">
+            Back to Home
+          </button>
+          <button 
+            onClick={handleUpload}
+            disabled={uploadStatus.uploading}
+            className="primary-button"
+          >
+            Upload Video
+          </button>
+        </div>
+        
+        {uploadStatus.message && (
+          <p className={`status ${uploadStatus.uploading ? 'info' : 'error'}`}>
+            {uploadStatus.message}
+          </p>
+        )}
+      </div>
+    );
+  };
+  
+  const renderProcessingStep = () => {
+    return (
+      <div className="processing-step">
+        <h2>Step 2: Video Processing</h2>
         
         {uploadStatus.uploading && (
-          <div className="progress-bar">
-            <div 
-              className="progress" 
-              style={{ width: `${uploadStatus.progress}%` }}
-            ></div>
-          </div>
-        )}
-        
-        <p className="status">
-          {uploadStatus.message}
-        </p>
-      </section>
-      
-      {videoId && (
-        <section className="processing-section">
-          <h2>Step 3: Processing Status</h2>
-          <p>Video ID: {videoId}</p>
-          <p className="status">
-            {processingStatus.message}
-          </p>
-        </section>
-      )}
-      
-      {videoId && (processingStatus.status === 'completed') && (
-          <section className="embed-section">
-            <h2>Step 4: Video Embed</h2>
-            <p>Embed this video on your website:</p>
-            
-            <div className="embed-preview">
-              <h3>Preview:</h3>
-              <VideonestEmbed 
-                videoId={videoId} 
-                style={{
-                  width: '100%',
-                  height: '500px',
-                  primaryColor: '#00000', // Using the same green as your buttons
-                  darkMode: false,
-                  hideVideoDetails: false
-                }}
-              />
+          <div className="upload-progress">
+            <h3>Uploading...</h3>
+            <div className="progress-bar">
+              <div 
+                className="progress" 
+                style={{ width: `${uploadStatus.progress}%` }}
+              ></div>
             </div>
-          </section>
-        )}
-      
-      <section className="videos-list-section">
-        <h2>List Videos</h2>
-        <button 
-          onClick={handleListVideos} 
-          disabled={!authStatus.authenticated || videosListStatus.loading}
-        >
-          {videosListStatus.loading ? 'Loading...' : 'Fetch Videos'}
-        </button>
-        
-        <p className="status">
-          {videosListStatus.message}
-        </p>
-        
-        {videosList.length > 0 && (
-          <div className="videos-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Title</th>
-                  <th>Description</th>
-                  <th>Published At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {videosList.map(video => (
-                  <tr key={video.id}>
-                    <td>{video.id}</td>
-                    <td>{video.title}</td>
-                    <td>{video.description ? (video.description.length > 20 ? `${video.description.substring(0, 20)}...` : video.description) : 'No description'}</td>
-                    <td>{video.published_at ? new Date(video.published_at).toLocaleString() : 'N/A'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <p>{Math.round(uploadStatus.progress)}%</p>
           </div>
         )}
-      </section>
+        
+        {videoId && (
+          <div className="processing-info">
+            <h3>Processing Video</h3>
+            <p>Video ID: {videoId}</p>
+            <p className="status">
+              {processingStatus.message}
+            </p>
+            
+            {processingStatus.status === 'completed' && (
+              <button 
+                onClick={() => setCurrentStep(2)} 
+                className="primary-button"
+              >
+                Preview Video
+              </button>
+            )}
+          </div>
+        )}
+        
+        <div className="button-container">
+          <button onClick={navigateToHome} className="secondary-button">
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderPreviewStep = () => {
+    return (
+      <div className="preview-step">
+        <h2>Step 3: Video Preview</h2>
+        
+        <div className="embed-container">
+          <VideonestEmbed 
+            videoId={videoId} 
+            style={{
+              width: '100%',
+              primaryColor: '#4e73df',
+              darkMode: false,
+              showVideoDetails: true
+            }}
+          />
+        </div>
+        
+        <div className="button-container">
+          <button onClick={navigateToHome} className="primary-button">
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Main render function for the component
+  return (
+    <div className="video-uploader-container">
+      <h1>Upload a New Video</h1>
       
-      <style jsx>{`
-        .video-uploader {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 20px;
-          font-family: Arial, sans-serif;
-        }
-        
-        section {
-          margin-bottom: 30px;
-          padding: 20px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-        }
-        
-        .form-group {
-          margin-bottom: 15px;
-        }
-        
-        label {
-          display: block;
-          margin-bottom: 5px;
-          font-weight: bold;
-        }
-        
-        input[type="text"], textarea {
-          width: 100%;
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-        }
-        
-        textarea {
-          height: 100px;
-        }
-        
-        button {
-          padding: 10px 15px;
-          background-color: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: bold;
-        }
-        
-        button:disabled {
-          background-color: #cccccc;
-          cursor: not-allowed;
-        }
-        
-        .status {
-          margin-top: 10px;
-          padding: 10px;
-          background-color: #f8f8f8;
-          border-radius: 4px;
-        }
-        
-        .status.success {
-          background-color: #dff0d8;
-          color: #3c763d;
-        }
-        
-        .progress-bar {
-          height: 20px;
-          background-color: #f0f0f0;
-          border-radius: 4px;
-          margin-top: 15px;
-          overflow: hidden;
-        }
-        
-        .progress {
-          height: 100%;
-          background-color: #4CAF50;
-          transition: width 0.3s ease;
-        }
-        
-        .thumbnail-preview {
-          margin: 10px 0;
-          text-align: center;
-        }
-        
-        .thumbnail-preview img {
-          max-width: 100%;
-          max-height: 200px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          object-fit: contain;
-        }
-        
-        .thumbnail-info {
-          margin-top: 5px;
-          font-size: 12px;
-          color: #666;
-        }
-        
-        .thumbnail-help {
-          margin-top: 5px;
-          font-size: 12px;
-          color: #666;
-        }
-        
-        .thumbnail-controls {
-          margin-top: 10px;
-        }
-        
-        .videos-table {
-          margin-top: 20px;
-          overflow-x: auto;
-        }
-        
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 10px;
-        }
-        
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        
-        th {
-          background-color: #f2f2f2;
-          font-weight: bold;
-        }
-        
-        tr:nth-child(even) {
-          background-color: #f9f9f9;
-        }
-        
-        tr:hover {
-          background-color: #f0f0f0;
-        }
-      `}</style>
+      <div className="step-indicator">
+        <div className={`step ${currentStep >= 0 ? 'active' : ''}`}>1. Upload Form</div>
+        <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>2. Processing</div>
+        <div className={`step ${currentStep >= 2 ? 'active' : ''}`}>3. Preview</div>
+      </div>
+      
+      <div className="step-content">
+        {currentStep === 0 && renderUploadForm()}
+        {currentStep === 1 && renderProcessingStep()}
+        {currentStep === 2 && renderPreviewStep()}
+      </div>
     </div>
   );
 }
