@@ -1,12 +1,21 @@
 // VideoUploader.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { uploadVideo, getVideoStatus, VideonestEmbed, setDebugMode } from 'videonest-sdk';
-import './VideoUploader.css';
+import '../styles/VideoUploader.css';
 
 function VideoUploader() {
   setDebugMode(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const videonestConfig = location.state?.config || null;
+  
+  // Redirect if no config
+  useEffect(() => {
+    if (!videonestConfig) {
+      navigate('/');
+    }
+  }, [videonestConfig, navigate]);
   
   // Upload state
   const [currentStep, setCurrentStep] = useState(0);
@@ -103,6 +112,8 @@ function VideoUploader() {
     }
   }, [customThumbnail, generateThumbnail]);
 
+
+  
   // Handle custom thumbnail selection
   const handleThumbnailFileChange = () => {
     const fileInput = thumbnailInputRef.current;
@@ -162,6 +173,7 @@ function VideoUploader() {
     
     const videoFile = fileInput.files[0];
     const title = titleRef.current.value || 'Untitled Video';
+    console.log("title is ", title);
     const description = descriptionRef.current.value || '';
     const tags = tagsRef.current.value ? tagsRef.current.value.split(',').map(tag => tag.trim()) : [];
     
@@ -173,14 +185,17 @@ function VideoUploader() {
       
       // Start the upload process
       const uploadResult = await uploadVideo(videoFile, {
-        title,
-        description,
-        tags,
+        metadata: {
+          title,
+          description,
+          tags,
+          channelId: videonestConfig.channelId
+        },
         thumbnail,
         onProgress: (progress) => {
           setUploadStatus(prev => ({ ...prev, progress }));
         }
-      });
+      }, videonestConfig);
       
       if (!uploadResult.success) {
         setUploadStatus({ 
@@ -191,7 +206,7 @@ function VideoUploader() {
         return;
       }
       
-      setVideoId(uploadResult.video_id);
+      setVideoId(uploadResult.video.id);
       setUploadStatus({ 
         uploading: false, 
         progress: 100, 
@@ -208,18 +223,34 @@ function VideoUploader() {
       // Poll for processing status
       const checkStatus = async () => {
         try {
-          const statusResult = await getVideoStatus(uploadResult.video_id);
-          
+          const statusResult = await getVideoStatus(uploadResult.video.id, videonestConfig);
+          console.log("status result was ", statusResult);
           if (statusResult.success) {
+            // Set more descriptive status messages based on the status
+            let statusMessage = '';
+            switch(statusResult.status) {
+              case 'processing':
+                statusMessage = 'Processing video...'; 
+                break;
+              case 'reencoding':
+                statusMessage = 'Re-encoding video for optimal playback...'; 
+                break;
+              case 'completed':
+                statusMessage = 'Processing complete! Video is ready to view.';
+                break;
+              default:
+                statusMessage = `Status: ${statusResult.status}`;
+            }
+            
             setProcessingStatus({ 
               processing: statusResult.status !== 'completed', 
               status: statusResult.status, 
-              message: `Status: ${statusResult.status}` 
+              message: statusMessage
             });
             
             if (statusResult.status !== 'completed') {
-              // Keep polling every 5 seconds
-              setTimeout(checkStatus, 5000);
+              // Keep polling every 3 seconds
+              setTimeout(checkStatus, 3000);
             }
           } else {
             setProcessingStatus({ 
@@ -353,16 +384,34 @@ function VideoUploader() {
           <div className="processing-info">
             <h3>Processing Video</h3>
             <p>Video ID: {videoId}</p>
-            <p className="status">
-              {processingStatus.message}
-            </p>
+            
+            <div className="processing-status-container">
+              <div className="processing-stages">
+                <div className={`stage ${processingStatus.status === 'processing' || processingStatus.status === 'reencoding' || processingStatus.status === 'completed' ? 'active' : ''}`}>
+                  <div className="stage-icon">1</div>
+                  <div className="stage-label">Processing</div>
+                </div>
+                <div className={`stage ${processingStatus.status === 'reencoding' || processingStatus.status === 'completed' ? 'active' : ''}`}>
+                  <div className="stage-icon">2</div>
+                  <div className="stage-label">Encoding</div>
+                </div>
+                <div className={`stage ${processingStatus.status === 'completed' ? 'active' : ''}`}>
+                  <div className="stage-icon">3</div>
+                  <div className="stage-label">Ready</div>
+                </div>
+              </div>
+              
+              <p className="status-message">
+                {processingStatus.message}
+              </p>
+            </div>
             
             {processingStatus.status === 'completed' && (
               <button 
                 onClick={() => setCurrentStep(2)} 
-                className="primary-button"
+                className="primary-button view-video-button"
               >
-                Preview Video
+                View Processed Video
               </button>
             )}
           </div>
@@ -382,17 +431,17 @@ function VideoUploader() {
       <div className="preview-step">
         <h2>Step 3: Video Preview</h2>
         
-        <div className="embed-container">
           <VideonestEmbed 
-            videoId={videoId} 
+            videoId={videoId}
+            config={videonestConfig} 
             style={{
               width: '100%',
-              primaryColor: '#4e73df',
+              primaryColor: '#FE4800',
               darkMode: false,
               showVideoDetails: true
             }}
           />
-        </div>
+  
         
         <div className="button-container">
           <button onClick={navigateToHome} className="primary-button">

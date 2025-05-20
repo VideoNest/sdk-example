@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { listVideos, VideonestEmbed } from 'videonest-sdk';
-import './VideoList.css';
+import '../styles/VideoList.css';
 
 function VideoList() {
   const navigate = useNavigate();
@@ -10,36 +10,48 @@ function VideoList() {
   const [error, setError] = useState('');
   const [selectedVideo, setSelectedVideo] = useState(null);
   
+  // Get config from location state
+  const location = useLocation();
+  const videonestConfig = location.state?.config || null;
+  
   // Embed customization options
   const [embedOptions, setEmbedOptions] = useState({
-    primaryColor: '#4e73df',
+    primaryColor: '#FE4800', // Orange theme
     darkMode: false,
-    showVideoDetails: true,
     showTitle: true,
     showDescription: true
   });
 
-  // Load videos on component mount
+  // Load videos on component mount if we have config
   useEffect(() => {
-    loadVideos();
-  }, []);
+    if (videonestConfig) {
+      loadVideos();
+    } else {
+      setError('Missing configuration. Please return to home.');
+    }
+  }, [videonestConfig]);
 
   const loadVideos = async () => {
     try {
       setLoading(true);
       setError('');
       
-      const result = await listVideos();
-      
-      if (result.success) {
-        setVideosList(result.videos || []);
+      // Only attempt to load videos if we have config
+      if (videonestConfig) {
+        const result = await listVideos(videonestConfig);
         
-        // If there are videos, select the first one by default
-        if (result.videos && result.videos.length > 0) {
-          setSelectedVideo(result.videos[0]);
+        if (result.success) {
+          setVideosList(result.videos || []);
+          
+          // If there are videos, select the first one by default
+          if (result.videos && result.videos.length > 0) {
+            setSelectedVideo(result.videos[0]);
+          }
+        } else {
+          setError(result.message || 'Failed to load videos');
         }
       } else {
-        setError(result.message || 'Failed to load videos');
+        setError('Not authenticated. Please authenticate first.');
       }
     } catch (error) {
       setError(error.message || 'An error occurred while loading videos');
@@ -77,7 +89,7 @@ function VideoList() {
   };
 
   return (
-    <div className={`videos-list-container ${embedOptions.darkMode ? 'dark-mode' : ''}`}>
+    <div className={`videos-list-container ${embedOptions.darkMode ? 'dark-mode' : ''}`} style={{"--primary-color": "#FE4800"}}>
       <h1>Your Videos</h1>
       
       <div className="button-container top-buttons">
@@ -92,7 +104,87 @@ function VideoList() {
       {error && <p className="error-message">{error}</p>}
       
       <div className="videos-content">
+        {/* Video Embed Section - Moved Above the Fold */}
+        <div className="video-preview-panel">
+          {selectedVideo ? (
+            <>
+          
+                <h3>Video Preview</h3>
+                <VideonestEmbed 
+                  videoId={selectedVideo.id} 
+                  style={{
+                    width: '100%',
+                    primaryColor: embedOptions.primaryColor,
+                    darkMode: embedOptions.darkMode,
+                    showTitle: embedOptions.showTitle,
+                    showDescription: embedOptions.showDescription
+                  }}
+                  config={videonestConfig}
+                />
+     
+
+              
+              <div className="embed-options">
+                <h3>Customize Embed</h3>
+                
+                <div className="option-group">
+                  <label>Primary Color:</label>
+                  <div className="color-picker-container">
+                    <input 
+                      type="color" 
+                      value={embedOptions.primaryColor}
+                      onChange={handleColorChange}
+                    />
+                    <span className="color-hex">{embedOptions.primaryColor}</span>
+                  </div>
+                </div>
+                
+                <div className="option-group">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      checked={embedOptions.darkMode}
+                      onChange={(e) => handleOptionChange('darkMode', e.target.checked)}
+                    />
+                    Dark Mode
+                  </label>
+                </div>
+                
+            
+                
+                <div className="option-group">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      checked={embedOptions.showTitle}
+                      onChange={(e) => handleOptionChange('showTitle', e.target.checked)}
+                    />
+                    Show Title
+                  </label>
+                </div>
+                
+                <div className="option-group">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      checked={embedOptions.showDescription}
+                      onChange={(e) => handleOptionChange('showDescription', e.target.checked)}
+                    />
+                    Show Description
+                  </label>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="no-video-selected">
+              <p>Select a video from the list to preview</p>
+            </div>
+          )}
+        </div>
+
+        {/* Videos Table - Moved Below the Embed */}
         <div className="videos-table-container">
+          <h3>All Videos</h3>
           {loading ? (
             <p className="loading-message">Loading videos...</p>
           ) : videosList.length === 0 ? (
@@ -144,93 +236,6 @@ function VideoList() {
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
-        
-        <div className="video-preview-panel">
-          {selectedVideo ? (
-            <>
-              <div className="embed-container">
-                <VideonestEmbed 
-                  videoId={selectedVideo.id} 
-                  style={{
-                    width: '100%',
-                    height: '500px',
-                    primaryColor: embedOptions.primaryColor,
-                    darkMode: embedOptions.darkMode,
-                    showVideoDetails: embedOptions.showVideoDetails,
-                    showTitle: embedOptions.showTitle,
-                    showDescription: embedOptions.showDescription
-                  }}
-                />
-              </div>
-              
-              <div className="embed-options">
-                <h3>Customize Embed</h3>
-                
-                <div className="option-group">
-                  <label>Primary Color:</label>
-                  <div className="color-picker-container">
-                    <input 
-                      type="color" 
-                      value={embedOptions.primaryColor}
-                      onChange={handleColorChange}
-                    />
-                    <span className="color-hex">{embedOptions.primaryColor}</span>
-                  </div>
-                </div>
-                
-                <div className="option-group">
-                  <label>
-                    <input 
-                      type="checkbox"
-                      checked={embedOptions.darkMode}
-                      onChange={(e) => handleOptionChange('darkMode', e.target.checked)}
-                    />
-                    Dark Mode
-                  </label>
-                </div>
-                
-                <div className="option-group">
-                  <label>
-                    <input 
-                      type="checkbox"
-                      checked={embedOptions.showVideoDetails}
-                      onChange={(e) => handleOptionChange('showVideoDetails', e.target.checked)}
-                    />
-                    Show Video Details
-                  </label>
-                </div>
-                
-                <div className="option-group">
-                  <label>
-                    <input 
-                      type="checkbox"
-                      checked={embedOptions.showTitle}
-                      onChange={(e) => handleOptionChange('showTitle', e.target.checked)}
-                    />
-                    Show Title
-                  </label>
-                </div>
-                
-                <div className="option-group">
-                  <label>
-                    <input 
-                      type="checkbox"
-                      checked={embedOptions.showDescription}
-                      onChange={(e) => handleOptionChange('showDescription', e.target.checked)}
-                    />
-                    Show Description
-                  </label>
-                </div>
-                
-
-              </div>
-            </>
-          ) : (
-            <div className="no-video-selected">
-              <p>Select a video from the list to preview</p>
-            </div>
           )}
         </div>
       </div>

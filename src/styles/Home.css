@@ -19,7 +19,7 @@
 }
 
 .auth-button {
-  background-color: #4e73df;
+  background-color: #FE4800;
   color: white;
   border: none;
   margin-top: 10px;
@@ -31,7 +31,7 @@
 }
 
 .auth-button:hover {
-  background-color: #2e59d9;
+  background-color: #e54000;
 }
 
 .auth-button:disabled {
@@ -83,7 +83,7 @@
 }
 
 .option-card h3 {
-  color: #4e73df;
+  color: #FE4800;
   margin-bottom: 15px;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .option-button {
-  background-color: #4e73df;
+  background-color: #FE4800;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -105,7 +105,7 @@
 }
 
 .option-button:hover {
-  background-color: #2e59d9;
+  background-color: #e54000;
 }
 
 .option-button:disabled {
