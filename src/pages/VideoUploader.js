@@ -436,9 +436,10 @@ function VideoUploader() {
             config={videonestConfig} 
             style={{
               width: '100%',
+              height: '50vh',
               primaryColor: '#FE4800',
               darkMode: false,
-              showVideoDetails: true
+              showTitle: true
             }}
           />
   

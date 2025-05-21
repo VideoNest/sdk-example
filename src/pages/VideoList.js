@@ -109,19 +109,22 @@ function VideoList() {
           {selectedVideo ? (
             <>
           
-                <h3>Video Preview</h3>
-    
-                <VideonestEmbed 
-                  videoId={selectedVideo.id} 
-                  style={{
-                    width: '100%',
-                    primaryColor: embedOptions.primaryColor,
-                    darkMode: embedOptions.darkMode,
-                    showTitle: embedOptions.showTitle,
-                    showDescription: embedOptions.showDescription
-                  }}
-                  config={videonestConfig}
-                />
+                <h3 style = {{marginBottom: '20px'}}>Video Preview</h3>
+                <div className="responsive-embed-container  video-embed-wrapper">
+                  <VideonestEmbed 
+                    videoId={selectedVideo.id} 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      primaryColor: embedOptions.primaryColor,
+                      darkMode: embedOptions.darkMode,
+                      showTitle: embedOptions.showTitle,
+                      showDescription: embedOptions.showDescription
+                    }}
+                    config={videonestConfig}
+                  />
+                   </div>
+      
      
 
               
