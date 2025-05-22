@@ -7,15 +7,30 @@ import '../styles/VideoUploader.css';
 function VideoUploader() {
   setDebugMode(true);
   const navigate = useNavigate();
-  const location = useLocation();
-  const videonestConfig = location.state?.config || null;
+  // Get authentication from localStorage
+  const [videonestConfig, setVideonestConfig] = useState(null);
   
-  // Redirect if no config
+  // Load authentication on component mount
   useEffect(() => {
-    if (!videonestConfig) {
-      navigate('/');
+    try {
+      const storedAuth = localStorage.getItem('videonestAuth');
+      if (storedAuth) {
+        const parsedAuth = JSON.parse(storedAuth);
+        // Ensure config exactly matches SDK expectations
+        const config = {
+          channelId: parsedAuth.channelId,
+          apiKey: parsedAuth.apiKey
+        };
+        console.log("Setting config:", config);
+        setVideonestConfig(config);
+      } else {
+        navigate('/login');
+      }
+    } catch (e) {
+      console.error('Error retrieving auth data:', e);
+      navigate('/login');
     }
-  }, [videonestConfig, navigate]);
+  }, [navigate]);
   
   // Upload state
   const [currentStep, setCurrentStep] = useState(0);

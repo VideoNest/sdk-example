@@ -48,3 +48,32 @@ npm start
 
 The application will be available at [http://localhost:3002](http://localhost:3002).
 
+## Docker Deployment
+
+This application can be easily deployed using Docker and Docker Compose.
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### Building and Running with Docker Compose
+
+```bash
+# Build and start the containers
+docker-compose up -d --build
+```
+
+The application will be available at http://localhost.
+
+### Manual Docker Build
+
+If you prefer to build and run the Docker container manually:
+
+```bash
+# Build the Docker image
+docker build -t videonest-app .
+
+# Run the container
+docker run -p 80:80 -d videonest-app
+```

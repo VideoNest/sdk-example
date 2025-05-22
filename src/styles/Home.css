@@ -4,10 +4,32 @@
   padding: 20px;
 }
 
-.home-container h1 {
-  text-align: center;
-  color: #333;
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+}
+
+.home-header h1 {
+  color: #333;
+  margin: 0;
+}
+
+.sign-out-button {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sign-out-button:hover {
+  background-color: #e0e0e0;
+  border-color: #ccc;
 }
 
 .auth-section {

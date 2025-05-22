@@ -1,39 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Home.css';
 
 function Home() {
   const navigate = useNavigate();
+  const [authData, setAuthData] = useState(null);
 
-  // Channel credentials - these should come from environment variables
-  const CHANNEL_ID = process.env.REACT_APP_VIDEONEST_CHANNEL_ID;
-  const CHANNEL_ID_INT = parseInt(CHANNEL_ID, 10);
-  const API_KEY = process.env.REACT_APP_VIDEONEST_API_KEY;
+  // Get authentication data from localStorage
+  useEffect(() => {
+    try {
+      const storedAuth = localStorage.getItem('videonestAuth');
+      if (storedAuth) {
+        setAuthData(JSON.parse(storedAuth));
+      } else {
+        // Redirect to login if no auth data
+        navigate('/login');
+      }
+    } catch (e) {
+      console.error('Error retrieving auth data:', e);
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Create VideonestConfig object with channelId and apiKey
   const getVideonestConfig = () => {
     return {
-      channelId: CHANNEL_ID_INT,
-      apiKey: API_KEY
+      channelId: authData?.channelId,
+      apiKey: authData?.apiKey
     };
   };
 
   const navigateToUpload = () => {
-    navigate('/upload', { state: { config: getVideonestConfig() } });
+    navigate('/upload');
   };
 
   const navigateToVideos = () => {
-    navigate('/videos', { state: { config: getVideonestConfig() } });
+    navigate('/videos');
+  };
+  
+  const handleSignOut = () => {
+    localStorage.removeItem('videonestAuth');
+    navigate('/login');
   };
 
   return (
     <div className="home-container">
-      <h1>Videonest SDK Tester </h1>
+      <div className="home-header">
+        <h1>Videonest SDK Tester</h1>
+        <button onClick={handleSignOut} className="sign-out-button">
+          Sign Out
+        </button>
+      </div>
       
       <section className="auth-section">
         <h2>Step 1: Ready to Use Videonest SDK</h2>
         <p className="status success">
-          SDK configured with Channel ID: {CHANNEL_ID}
+          SDK configured with Channel ID: {authData?.channelId}
         </p>
       </section>
 
@@ -42,7 +64,7 @@ function Home() {
         <div className="options-container">
           <div className="option-card">
             <h3>Upload a New Video</h3>
-            <p>Upload and process a new video to  Videonest</p>
+            <p>Upload and process a new video to Videonest</p>
             <button 
               onClick={navigateToUpload} 
               className="option-button"

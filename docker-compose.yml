@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  videonest-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    # Uncomment the following if you need to set environment variables
+    # environment:
+    #   - NODE_ENV=production
+    volumes:
+      # For NGINX logs
+      - ./logs:/var/log/nginx
