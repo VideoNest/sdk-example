@@ -1,0 +1,32 @@
+.refresh-indicator-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  z-index: 9999;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: rgba(254, 72, 0, 0.1);
+}
+
+.refresh-indicator-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to right, rgba(254, 72, 0, 0), #FE4800 50%, rgba(254, 72, 0, 0));
+  animation: slide 1.2s ease-in-out infinite;
+  transform: translateX(-100%);
+  box-shadow: 0 0 5px rgba(254, 72, 0, 0.7);
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

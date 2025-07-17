@@ -48,18 +48,8 @@
   gap: 20px;
 }
 
-/* Removed the media query that switched to row layout
-   Now content will always stack vertically */
-
 .videos-table-container {
   width: 100%;
-}
-
-.video-preview-panel {
-  width: 100%;
-}
-
-.videos-table-container {
   background-color: #f8f9fa;
   border-radius: 8px;
   overflow: auto;
@@ -68,6 +58,18 @@
 }
 
 .dark-mode .videos-table-container {
+  background-color: #2c2c2c;
+}
+
+.video-preview-panel {
+  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .video-preview-panel {
   background-color: #2c2c2c;
 }
 
@@ -100,7 +102,6 @@
 }
 
 .videos-table tbody tr {
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 
@@ -121,21 +122,22 @@
 }
 
 .thumbnail {
-  width: 60px;
-  height: 45px;
+  width: 80px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 3px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .no-thumbnail {
-  width: 60px;
-  height: 45px;
+  width: 80px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #eee;
-  border-radius: 3px;
-  font-size: 0.7rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
   color: #777;
   text-align: center;
 }
@@ -145,32 +147,216 @@
   color: #bbb;
 }
 
-.preview-button {
-  padding: 4px 10px;
+.video-title {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status badges */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-uploading {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-reencoding {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-failed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-unknown {
+  background-color: #e2e3e5;
+  color: #495057;
+}
+
+.dark-mode .status-completed {
+  background-color: #1e7e34;
+  color: #d4edda;
+}
+
+.dark-mode .status-uploading {
+  background-color: #b8860b;
+  color: #fff3cd;
+}
+
+.dark-mode .status-reencoding {
+  background-color: #0066cc;
+  color: #cce5ff;
+}
+
+.dark-mode .status-failed {
+  background-color: #dc3545;
+  color: #f8d7da;
+}
+
+.dark-mode .status-unknown {
+  background-color: #6c757d;
+  color: #e2e3e5;
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.play-button {
   background-color: #FE4800;
   color: white;
+}
+
+.play-button:hover:not(:disabled) {
+  background-color: #e54000;
+}
+
+.play-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.files-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.files-button:hover {
+  background-color: #0056b3;
+}
+
+/* Expanded row styles */
+.expanded-row {
+  background-color: #f8f9fa;
+}
+
+.dark-mode .expanded-row {
+  background-color: #2a2a2a;
+}
+
+.hosted-files-container {
+  padding: 20px;
+  border-left: 4px solid #FE4800;
+}
+
+.hosted-files-container h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.dark-mode .hosted-files-container h4 {
+  color: #eee;
+}
+
+.hosted-files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.hosted-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .hosted-file-item {
+  background-color: #333;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-type {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.dark-mode .file-type {
+  color: #eee;
+}
+
+.file-size {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.dark-mode .file-size {
+  color: #bbb;
+}
+
+.file-dimensions {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.dark-mode .file-dimensions {
+  color: #999;
+}
+
+.download-button {
+  padding: 6px 12px;
+  background-color: #28a745;
+  color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: background-color 0.2s;
 }
 
-.preview-button:hover {
-  background-color: #e54000;
+.download-button:hover {
+  background-color: #218838;
 }
 
-.video-preview-panel {
-  background-color: #f8f9fa;
-  border-radius: 8px;
+.no-files {
+  text-align: center;
+  color: #666;
+  font-style: italic;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dark-mode .video-preview-panel {
-  background-color: #2c2c2c;
+.dark-mode .no-files {
+  color: #bbb;
 }
 
+/* Responsive design */
 .responsive-embed-container {
   position: relative;
   overflow: hidden;
@@ -189,45 +375,34 @@
   border: none;
 }
 
-/* Video embed wrapper with flex centering */
 .video-embed-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 0; /* Override the aspect ratio padding */
-  height: 400px; /* Default height for mobile */
+  padding-bottom: 0;
+  height: 400px;
 }
 
-/* Tablet and larger screens */
 @media (min-width: 768px) {
   .responsive-embed-container {
     height: 0;
-    padding-bottom: 56.25%; /* Maintain 16:9 aspect ratio */
+    padding-bottom: 56.25%;
     max-height: 600px;
   }
   
   .video-embed-wrapper {
-    height: 600px; /* Taller height for desktop */
+    height: 600px;
+  }
+  
+  .action-buttons {
+    flex-wrap: nowrap;
   }
 }
 
-/* Desktop screens */
 @media (min-width: 1200px) {
   .responsive-embed-container {
     max-height: 675px;
   }
-}
-
-.embed-container {
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.embed-container iframe {
-  display: block;
-  width: 100%;
-  height: 450px;
-  border: none;
 }
 
 .no-video-selected {
@@ -289,38 +464,6 @@
 
 .color-hex {
   font-family: monospace;
-}
-
-.embed-code {
-  margin-top: 20px;
-  background-color: #f1f3f5;
-  padding: 15px;
-  border-radius: 4px;
-}
-
-.dark-mode .embed-code {
-  background-color: #3a3a3a;
-}
-
-.embed-code h4 {
-  margin-bottom: 10px;
-  color: inherit;
-}
-
-.embed-code pre {
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 0.9rem;
-  overflow-x: auto;
-  padding: 10px;
-  background-color: #e9ecef;
-  border-radius: 3px;
-  color: #333;
-}
-
-.dark-mode .embed-code pre {
-  background-color: #444;
-  color: #eee;
 }
 
 .button-container {

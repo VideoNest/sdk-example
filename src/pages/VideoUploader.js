@@ -1,7 +1,7 @@
 // VideoUploader.jsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { uploadVideo, getVideoStatus, VideonestEmbed, setDebugMode } from 'videonest-sdk';
+import { uploadVideo, setDebugMode } from 'videonest-sdk';
 import '../styles/VideoUploader.css';
 
 function VideoUploader() {
@@ -35,8 +35,6 @@ function VideoUploader() {
   // Upload state
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '' });
-  const [processingStatus, setProcessingStatus] = useState({ processing: false, status: '', message: '' });
-  const [videoId, setVideoId] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [customThumbnail, setCustomThumbnail] = useState(false);
@@ -127,8 +125,6 @@ function VideoUploader() {
     }
   }, [customThumbnail, generateThumbnail]);
 
-
-  
   // Handle custom thumbnail selection
   const handleThumbnailFileChange = () => {
     const fileInput = thumbnailInputRef.current;
@@ -195,7 +191,7 @@ function VideoUploader() {
     try {
       setUploadStatus({ uploading: true, progress: 0, message: 'Preparing upload...' });
       
-      // Move to the processing step
+      // Move to the upload progress step
       setCurrentStep(1);
       
       // Start the upload process
@@ -208,7 +204,8 @@ function VideoUploader() {
         },
         thumbnail,
         onProgress: (progress) => {
-          setUploadStatus(prev => ({ ...prev, progress }));
+          const message = progress === 100 ? 'Uploading thumbnail...' : `Uploading... ${Math.round(progress)}%`;
+          setUploadStatus(prev => ({ ...prev, progress, message }));
         }
       }, videonestConfig);
       
@@ -221,70 +218,16 @@ function VideoUploader() {
         return;
       }
       
-      setVideoId(uploadResult.video.id);
       setUploadStatus({ 
         uploading: false, 
         progress: 100, 
-        message: 'Upload successful! Processing video...' 
+        message: 'Upload successful! Redirecting to home...' 
       });
       
-      // Start polling for video processing status
-      setProcessingStatus({ 
-        processing: true, 
-        status: 'processing', 
-        message: 'Your video is being processed...' 
-      });
-      
-      // Poll for processing status
-      const checkStatus = async () => {
-        try {
-          const statusResult = await getVideoStatus(uploadResult.video.id, videonestConfig);
-          console.log("status result was ", statusResult);
-          if (statusResult.success) {
-            // Set more descriptive status messages based on the status
-            let statusMessage = '';
-            switch(statusResult.status) {
-              case 'processing':
-                statusMessage = 'Processing video...'; 
-                break;
-              case 'reencoding':
-                statusMessage = 'Re-encoding video for optimal playback...'; 
-                break;
-              case 'completed':
-                statusMessage = 'Processing complete! Video is ready to view.';
-                break;
-              default:
-                statusMessage = `Status: ${statusResult.status}`;
-            }
-            
-            setProcessingStatus({ 
-              processing: statusResult.status !== 'completed', 
-              status: statusResult.status, 
-              message: statusMessage
-            });
-            
-            if (statusResult.status !== 'completed') {
-              // Keep polling every 3 seconds
-              setTimeout(checkStatus, 3000);
-            }
-          } else {
-            setProcessingStatus({ 
-              processing: false, 
-              status: 'error', 
-              message: `Error checking status: ${statusResult.message || 'Unknown error'}` 
-            });
-          }
-        } catch (error) {
-          setProcessingStatus({ 
-            processing: false, 
-            status: 'error', 
-            message: `Error checking status: ${error.message}` 
-          });
-        }
-      };
-      
-      // Start the polling process
-      checkStatus();
+      // Navigate to home after successful upload
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
       
     } catch (error) {
       setUploadStatus({ 
@@ -369,7 +312,7 @@ function VideoUploader() {
         </div>
         
         {uploadStatus.message && (
-          <p className={`status ${uploadStatus.uploading ? 'info' : 'error'}`}>
+          <p className={`status ${uploadStatus.uploading ? 'info' : uploadStatus.message.includes('error') || uploadStatus.message.includes('failed') ? 'error' : 'success'}`}>
             {uploadStatus.message}
           </p>
         )}
@@ -377,90 +320,27 @@ function VideoUploader() {
     );
   };
   
-  const renderProcessingStep = () => {
+  const renderUploadProgress = () => {
     return (
-      <div className="processing-step">
-        <h2>Step 2: Video Processing</h2>
+      <div className="upload-progress-step">
+        <h2>Step 2: Uploading Video</h2>
         
-        {uploadStatus.uploading && (
-          <div className="upload-progress">
-            <h3>Uploading...</h3>
-            <div className="progress-bar">
-              <div 
-                className="progress" 
-                style={{ width: `${uploadStatus.progress}%` }}
-              ></div>
-            </div>
-            <p>{Math.round(uploadStatus.progress)}%</p>
+        <div className="upload-progress">
+          <div className="progress-bar">
+            <div 
+              className="progress" 
+              style={{ width: `${uploadStatus.progress}%` }}
+            ></div>
           </div>
-        )}
+          <p>{Math.round(uploadStatus.progress)}%</p>
+        </div>
         
-        {videoId && (
-          <div className="processing-info">
-            <h3>Processing Video</h3>
-            <p>Video ID: {videoId}</p>
-            
-            <div className="processing-status-container">
-              <div className="processing-stages">
-                <div className={`stage ${processingStatus.status === 'processing' || processingStatus.status === 'reencoding' || processingStatus.status === 'completed' ? 'active' : ''}`}>
-                  <div className="stage-icon">1</div>
-                  <div className="stage-label">Processing</div>
-                </div>
-                <div className={`stage ${processingStatus.status === 'reencoding' || processingStatus.status === 'completed' ? 'active' : ''}`}>
-                  <div className="stage-icon">2</div>
-                  <div className="stage-label">Encoding</div>
-                </div>
-                <div className={`stage ${processingStatus.status === 'completed' ? 'active' : ''}`}>
-                  <div className="stage-icon">3</div>
-                  <div className="stage-label">Ready</div>
-                </div>
-              </div>
-              
-              <p className="status-message">
-                {processingStatus.message}
-              </p>
-            </div>
-            
-            {processingStatus.status === 'completed' && (
-              <button 
-                onClick={() => setCurrentStep(2)} 
-                className="primary-button view-video-button"
-              >
-                View Processed Video
-              </button>
-            )}
-          </div>
-        )}
+        <p className="status-message">
+          {uploadStatus.message}
+        </p>
         
         <div className="button-container">
           <button onClick={navigateToHome} className="secondary-button">
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  };
-  
-  const renderPreviewStep = () => {
-    return (
-      <div className="preview-step">
-        <h2>Step 3: Video Preview</h2>
-        
-          <VideonestEmbed 
-            videoId={videoId}
-            config={videonestConfig} 
-            style={{
-              width: '100%',
-              height: '50vh',
-              primaryColor: '#FE4800',
-              darkMode: false,
-              showTitle: true
-            }}
-          />
-  
-        
-        <div className="button-container">
-          <button onClick={navigateToHome} className="primary-button">
             Back to Home
           </button>
         </div>
@@ -475,14 +355,12 @@ function VideoUploader() {
       
       <div className="step-indicator">
         <div className={`step ${currentStep >= 0 ? 'active' : ''}`}>1. Upload Form</div>
-        <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>2. Processing</div>
-        <div className={`step ${currentStep >= 2 ? 'active' : ''}`}>3. Preview</div>
+        <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>2. Uploading</div>
       </div>
       
       <div className="step-content">
         {currentStep === 0 && renderUploadForm()}
-        {currentStep === 1 && renderProcessingStep()}
-        {currentStep === 2 && renderPreviewStep()}
+        {currentStep === 1 && renderUploadProgress()}
       </div>
     </div>
   );
