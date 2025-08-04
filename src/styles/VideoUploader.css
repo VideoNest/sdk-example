@@ -190,6 +190,10 @@
   transition: width 0.3s ease;
 }
 
+.progress.pulse {
+  animation: progressPulse 1.5s infinite;
+}
+
 .upload-progress h3,
 .processing-info h3 {
   margin-bottom: 15px;
@@ -295,6 +299,18 @@
   }
 }
 
+@keyframes progressPulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .embed-container {
   margin-top: 20px;
   border-radius: 4px;
@@ -305,4 +321,38 @@
   width: 100%;
   height: 500px;
   border: none;
+}
+
+/* Upload failure modal styles */
+.upload-failure-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-content h3 {
+  color: #721c24;
+  margin-bottom: 15px;
+}
+
+.modal-content p {
+  margin-bottom: 20px;
+  color: #333;
 }

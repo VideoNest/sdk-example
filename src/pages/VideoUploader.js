@@ -34,7 +34,8 @@ function VideoUploader() {
   
   // Upload state
   const [currentStep, setCurrentStep] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '' });
+  const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '', status: '' });
+  const [showFailureModal, setShowFailureModal] = useState(false);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [customThumbnail, setCustomThumbnail] = useState(false);
@@ -203,9 +204,17 @@ function VideoUploader() {
           channelId: videonestConfig.channelId
         },
         thumbnail,
-        onProgress: (progress) => {
-          const message = progress === 100 ? 'Uploading thumbnail...' : `Uploading... ${Math.round(progress)}%`;
-          setUploadStatus(prev => ({ ...prev, progress, message }));
+        onProgress: (progress, status) => {
+          let message;
+          if (status === 'finalizing') {
+            message = 'Finalizing upload...';
+          } else if (status === 'failed') {
+            message = 'Upload failed!';
+            setShowFailureModal(true);
+          } else {
+            message = `Uploading... ${Math.round(progress)}%`;
+          }
+          setUploadStatus(prev => ({ ...prev, progress, message, status }));
         }
       }, videonestConfig);
       
@@ -328,11 +337,13 @@ function VideoUploader() {
         <div className="upload-progress">
           <div className="progress-bar">
             <div 
-              className="progress" 
+              className={`progress ${uploadStatus.status === 'finalizing' ? 'pulse' : ''}`} 
               style={{ width: `${uploadStatus.progress}%` }}
             ></div>
           </div>
-          <p>{Math.round(uploadStatus.progress)}%</p>
+          {uploadStatus.status !== 'finalizing' && (
+            <p>{Math.round(uploadStatus.progress)}%</p>
+          )}
         </div>
         
         <p className="status-message">
@@ -344,6 +355,21 @@ function VideoUploader() {
             Back to Home
           </button>
         </div>
+
+        {showFailureModal && (
+          <div className="upload-failure-modal">
+            <div className="modal-content">
+              <h3>Upload Failed</h3>
+              <p>The video upload process has failed. Please try again or contact support.</p>
+              <button onClick={() => {
+                setShowFailureModal(false);
+                setCurrentStep(0);
+              }} className="primary-button">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
