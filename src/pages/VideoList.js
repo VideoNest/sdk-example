@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { listVideos, VideonestEmbed } from 'videonest-sdk';
+import { listVideos, VideonestEmbed, VideonestPreview } from 'videonest-sdk';
 import RefreshIndicator from '../components/RefreshIndicator';
 import '../styles/VideoList.css';
 
@@ -239,18 +239,33 @@ function VideoList() {
             <>
               <h3 style={{marginBottom: '20px'}}>Video Preview</h3>
               <div className="responsive-embed-container video-embed-wrapper">
-                <VideonestEmbed 
-                  videoId={selectedVideo.id} 
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    primaryColor: embedOptions.primaryColor,
-                    darkMode: embedOptions.darkMode,
-                    showTitle: embedOptions.showTitle,
-                    showDescription: embedOptions.showDescription
-                  }}
-                  config={videonestConfig}
-                />
+                {selectedVideo.status === 'completed' ? (
+                  <VideonestEmbed 
+                    videoId={selectedVideo.id} 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      primaryColor: embedOptions.primaryColor,
+                      darkMode: embedOptions.darkMode,
+                      showTitle: embedOptions.showTitle,
+                      showDescription: embedOptions.showDescription
+                    }}
+                    config={videonestConfig}
+                  />
+                ) : (
+                  <VideonestPreview 
+                    videoId={selectedVideo.id} 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      primaryColor: embedOptions.primaryColor,
+                      darkMode: embedOptions.darkMode,
+                      showTitle: embedOptions.showTitle,
+                      showDescription: embedOptions.showDescription
+                    }}
+                    config={videonestConfig}
+                  />
+                )}
               </div>
               
               <div className="embed-options">
@@ -354,9 +369,8 @@ function VideoList() {
                           <button 
                             onClick={() => handlePlayVideo(video)}
                             className="action-button play-button"
-                            disabled={video.status !== 'completed'}
                           >
-                            Play Video
+                            {video.status === 'completed' ? 'Play Video' : 'Preview Video'}
                           </button>
                           <button 
                             onClick={() => handleToggleFiles(video.id)}
