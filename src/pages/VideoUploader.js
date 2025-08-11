@@ -200,7 +200,7 @@ function VideoUploader() {
         metadata: {
           title,
           description,
-          tags,
+          tags: tags?.length > 0 ? tags.join(',') : '',
           channelId: videonestConfig.channelId
         },
         thumbnail,

@@ -50,27 +50,18 @@ function VideoList() {
   useEffect(() => {
     if (videonestConfig) {
       loadVideos();
-      
-      // Set up auto-refresh interval (every 30 seconds)
-      const refreshInterval = setInterval(() => {
-        console.log('Auto-refreshing videos list...');
-        loadVideos(true); // Pass true to indicate this is an auto-refresh
-      }, 30000); // 30 seconds
-      
-      // Clean up interval on component unmount
-      return () => clearInterval(refreshInterval);
     } else {
       setError('Missing configuration. Please return to home.');
     }
   }, [videonestConfig]);
 
-  const loadVideos = async (isAutoRefresh = false) => {
+  const loadVideos = async (isManualRefresh = false) => {
     // Track when the request started
     const startTime = Date.now();
     
     try {
-      // Show loading indicator on initial load, show refresh indicator on refreshes
-      if (!isAutoRefresh) {
+      // Show loading indicator on initial load, show refresh indicator on manual refreshes
+      if (!isManualRefresh) {
         setLoading(true);
       } else {
         // Set refreshing state - will be reset in finally block
@@ -87,8 +78,8 @@ function VideoList() {
           const newVideosList = result.videos || [];
           setVideosList(newVideosList);
           
-          if (isAutoRefresh && selectedVideo) {
-            // During auto-refresh, try to maintain the current selection
+          if (isManualRefresh && selectedVideo) {
+            // During manual refresh, try to maintain the current selection
             // but update its status if it changed
             const updatedSelectedVideo = newVideosList.find(video => video.id === selectedVideo.id);
             if (updatedSelectedVideo) {
@@ -167,6 +158,10 @@ function VideoList() {
     navigate('/');
   };
 
+  const handleManualRefresh = () => {
+    loadVideos(true); // Pass true to indicate this is a manual refresh
+  };
+
   // Format duration from seconds to MM:SS or HH:MM:SS
   const formatDuration = (seconds) => {
     if (!seconds || seconds === 0) return 'N/A';
@@ -224,6 +219,13 @@ function VideoList() {
       <div className="button-container top-buttons">
         <button onClick={navigateToHome} className="secondary-button">
           Back to Home
+        </button>
+        <button 
+          onClick={handleManualRefresh} 
+          className="refresh-button"
+          disabled={loading || refreshing}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
       
