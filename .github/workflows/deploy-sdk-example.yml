@@ -1,0 +1,45 @@
+name: deploy-sdk-example
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-and-deploy:
+    permissions: write-all
+    runs-on: [stage, self-hosted, linux]
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: unnecessary
+          if_key_exists: ignore
+      - name: Extract branch name
+        shell: bash
+        run: echo ${BRANCH_NAME}
+        env: 
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref || 'main' }}
+      - name: deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: worker01.videonest.co
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          command_timeout: 200m
+          envs: BRANCH_NAME,GITHUB_ACTOR
+          script: |
+            cd /home/debian/videonest/sdk/
+            echo "BRANCH_NAME: $BRANCH_NAME"
+            echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+            git pull
+            # Rebuild containers and bring them up in detached mode
+            docker-compose down
+            docker container prune -f
+            docker-compose build --no-cache
+            docker-compose up -d
+        env: 
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref || 'main' }}
+          UPDATED_AT: ${{ github.event.pull_request.updated_at }}
