@@ -69,6 +69,7 @@ function VideoList() {
       }
       setError('');
       
+      //  lets see
       // Only attempt to load videos if we have config
       console.log("loading videos with videonest config ", videonestConfig);
       if (videonestConfig) {
