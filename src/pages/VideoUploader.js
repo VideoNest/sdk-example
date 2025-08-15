@@ -33,6 +33,7 @@ function VideoUploader() {
   }, [navigate]);
   
   // Upload state
+  // come on 
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadStatus, setUploadStatus] = useState({ uploading: false, progress: 0, message: '', status: '' });
   const [showFailureModal, setShowFailureModal] = useState(false);
